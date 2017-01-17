@@ -96,11 +96,6 @@
 !insertmacro DualUseFunctions_ ""
 !insertmacro DualUseFunctions_ "un."
 
-Function displayPath
-  ReadRegStr $R0 HKLM "${REG_ENVIRONMENT}" "Path"
-  MessageBox MB_OK $R0
-FunctionEnd
-
 ;--------------------------------
 ;Languages
 
@@ -124,9 +119,7 @@ Section "Dummy Section" SecDummy
   
 	Push 1 ; 1 = append.
   Push "$INSTDIR\bin"
-  call displayPath
   Call SetPathVar
-  call displayPath
 
   SetOutPath "$APPDATA\Nova"
 
