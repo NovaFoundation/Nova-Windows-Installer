@@ -19,8 +19,15 @@
 
 	!include "Registry.nsh"
 	!include "WordFunc.nsh"
-	!include LogicLib.nsh
-    !include WinCore.nsh
+	!include "LogicLib.nsh"
+  !include "WordFunc.nsh"
+
+  !insertmacro WordAdd
+  !insertmacro un.WordAdd
+
+  !define REG_ENVIRONMENT "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+
+  !include WinCore.nsh
 	 
 
   ;Name and file
@@ -57,53 +64,41 @@
   !insertmacro MUI_UNPAGE_FINISH
 
 
+!macro DualUseFunctions_ un_
+  function ${un_}SetPathVar
+  # stack top: <'string to add'> / <AppendFlag>
+  Exch $0 ; new string
+  Exch
+  Exch $1 ; append = 2, prefix = 1, remove = 0
+  Push $R0  ; saved working registers
 
-Function RegAppendString
-System::Store S
-Pop $R0 ; append
-Pop $R1 ; separator
-Pop $R2 ; reg value
-Pop $R3 ; reg path
-Pop $R4 ; reg hkey
-System::Call 'ADVAPI32::RegCreateKey(i$R4,tR3,*i.r1)i.r0'
-${If} $0 = 0
-    System::Call 'ADVAPI32::RegQueryValueEx(ir1,tR2,i0,*i.r2,i0,*i0r3)i.r0'
-    ${If} $0 <> 0
-        StrCpy $2 ${REG_SZ}
-        StrCpy $3 0
-    ${EndIf}
-    StrLen $4 $R0
-    StrLen $5 $R1
-    IntOp $4 $4 + $5
-    IntOp $4 $4 + 1 ; For \0
-    !if ${NSIS_CHAR_SIZE} > 1
-        IntOp $4 $4 * ${NSIS_CHAR_SIZE}
-    !endif
-    IntOp $4 $4 + $3
-    System::Alloc $4
-    System::Call 'ADVAPI32::RegQueryValueEx(ir1,tR2,i0,i0,isr9,*ir4r4)i.r0'
-    ${If} $0 = 0
-    ${OrIf} $0 = ${ERROR_FILE_NOT_FOUND}
-        System::Call 'KERNEL32::lstrlen(t)(ir9)i.r0'
-        ${If} $0 <> 0
-            System::Call 'KERNEL32::lstrcat(t)(ir9,tR1)'
-        ${EndIf}
-        System::Call 'KERNEL32::lstrcat(t)(ir9,tR0)'
-        System::Call 'KERNEL32::lstrlen(t)(ir9)i.r0'
-        IntOp $0 $0 + 1
-        !if ${NSIS_CHAR_SIZE} > 1
-            IntOp $0 $0 * ${NSIS_CHAR_SIZE}
-        !endif
-        System::Call 'ADVAPI32::RegSetValueEx(ir1,tR2,i0,ir2,ir9,ir0)i.r0'
-    ${EndIf}
-    System::Free $9
-    System::Call 'ADVAPI32::RegCloseKey(ir1)'
-${EndIf}
-Push $0
-System::Store L
+  ReadRegStr $R0 HKLM "${REG_ENVIRONMENT}" "Path"
+
+  ${Select} $1
+  ${Case} 0
+  ${${un_}WordAdd} "$R0" ";" "-$0" $R0
+  ${Case} 1
+  ${${un_}WordAdd} "$0" ";" "+$R0" $R0
+  ${Case} 2
+  ${${un_}WordAdd} "$R0" ";" "+$0" $R0
+  ${EndSelect}
+
+  WriteRegExpandStr HKLM "${REG_ENVIRONMENT}" "Path" "$R0"
+  System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r2'
+
+  Pop $R0 ; restore registers
+  Pop $1
+  Pop $0
+  functionEnd
+!macroend
+  
+!insertmacro DualUseFunctions_ ""
+!insertmacro DualUseFunctions_ "un."
+
+Function displayPath
+  ReadRegStr $R0 HKLM "${REG_ENVIRONMENT}" "Path"
+  MessageBox MB_OK $R0
 FunctionEnd
-
-
 
 ;--------------------------------
 ;Languages
@@ -127,14 +122,11 @@ Section "Dummy Section" SecDummy
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   
-	Push ${HKEY_LOCAL_MACHINE}
-	Push "Environment"
-	Push "Path"
-	Push ";"
-	Push "$PROGRAMFILES64\Nova\bin"
-	Call RegAppendString
-	Pop $0
-	DetailPrint RegAppendString:Error=$0
+	Push 1 ; 1 = append.
+  Push "$INSTDIR\bin"
+  call displayPath
+  Call SetPathVar
+  call displayPath
 
 SectionEnd
 
@@ -161,20 +153,9 @@ Section "Uninstall"
 
   RMDir "$INSTDIR"
   
-  # remove the variable
-  ReadRegStr $R1 HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path"
-  
-  #Push "$R1"
-  #Push ";$PROGRAMFILES64\Nova\bin"
-  #Push ""
-  #Push "+"
-  #Push $R1
-  
-  #Call un.WordReplace
-  ${un.WordReplace} "$R1" ";$PROGRAMFILES64\Nova\bin" "" "+" $R1
-  WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "Path" "$R1"
-#  Push PATH_DIR
-#  Call un.DeleteEnvStr
+  Push 0 ; 0 = remove
+  Push "$INSTDIR\bin"
+  Call Un.SetPathVar
 
   DeleteRegKey /ifempty HKCU "Software\Nova"
 
