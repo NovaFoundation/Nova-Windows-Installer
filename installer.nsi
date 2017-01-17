@@ -115,8 +115,7 @@ Section "Dummy Section" SecDummy
 
   ;ADD YOUR OWN FILES HERE...
   FILE /r "bin"
-  FILE /r /x *.git /x *.gitignore /x *.o /x *.d "..\StandardLibrary"
-
+  
   ;Store installation folder
   WriteRegStr HKCU "Software\Nova" "" $INSTDIR
 
@@ -128,6 +127,10 @@ Section "Dummy Section" SecDummy
   call displayPath
   Call SetPathVar
   call displayPath
+
+  SetOutPath "$APPDATA\Nova"
+
+  FILE /r /x *.git /x *.gitignore /x *.o /x *.d "..\StandardLibrary"
 
 SectionEnd
 
@@ -149,7 +152,7 @@ Section "Uninstall"
   ;ADD YOUR OWN FILES HERE...
   
   RMDir /r "$INSTDIR\bin"
-  RMDir /r "$INSTDIR\StandardLibrary"
+  RMDir /r "$APPDATA\Nova"
   Delete "$INSTDIR\Uninstall.exe"
 
   RMDir "$INSTDIR"
