@@ -85,6 +85,7 @@
 
   WriteRegExpandStr HKLM "${REG_ENVIRONMENT}" "Path" "$R0"
   System::Call 'Kernel32::SetEnvironmentVariableA(t, t) i("PATH", R0).r2'
+  SendMessage ${HWND_BROADCAST} ${WM_SETTINGCHANGE} 0 "STR:Environment" /TIMEOUT=5000
 
   Pop $R0 ; restore registers
   Pop $1
@@ -156,7 +157,7 @@ Section "Uninstall"
   Push 0 ; 0 = remove
   Push "$INSTDIR\bin"
   Call Un.SetPathVar
-
+  
   DeleteRegKey /ifempty HKCU "Software\Nova"
 
 SectionEnd
