@@ -131,6 +131,7 @@ Section "Dummy Section" SecDummy
   SetOutPath "$APPDATA\Nova"
 
   FILE /r /x *.git /x *.gitignore /x *.o /x *.d "..\StandardLibrary"
+  FILE /r /x *.git /x *.idea /x *.iml /x src /x *.gitignore /x *.o /x *.d "..\Nova-C"
 
 SectionEnd
 
