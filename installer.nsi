@@ -108,7 +108,9 @@
 ;--------------------------------
 ;Installer Sections
 
-Section "Dummy Section" SecDummy
+Section "Nova compiler" NovaCompiler
+
+  SectionIn RO
 
   SetOutPath "$INSTDIR"
 
@@ -135,15 +137,39 @@ Section "Dummy Section" SecDummy
 
 SectionEnd
 
+Section "Standard library" Stdlib
+
+  SectionIn RO
+
+  SetOutPath "$APPDATA\Nova"
+
+  FILE /r /x *.git /x *.gitignore /x *.o /x *.d "..\StandardLibrary"
+
+SectionEnd
+
+Section "C language target" CLang
+  
+  SectionIn RO
+  
+  SetOutPath "$APPDATA\Nova"
+
+  FILE /r /x *.git /x *.idea /x *.iml /x src /x *.gitignore /x *.o /x *.d "..\Nova-C"
+
+SectionEnd
+
 ;--------------------------------
 ;Descriptions
 
   ;Language strings
-  LangString DESC_SecDummy ${LANG_ENGLISH} "A test section."
+  LangString DESC_NovaCompiler ${LANG_ENGLISH} "The nova compiler"
+  LangString DESC_CLang ${LANG_ENGLISH} "The c language compilation target"
+  LangString DESC_Stdlib ${LANG_ENGLISH} "The nova standard library"
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} $(DESC_SecDummy)
+    !insertmacro MUI_DESCRIPTION_TEXT ${NovaCompiler} $(DESC_NovaCompiler)
+    !insertmacro MUI_DESCRIPTION_TEXT ${CLang} $(DESC_CLang)
+    !insertmacro MUI_DESCRIPTION_TEXT ${Stdlib} $(DESC_Stdlib)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;--------------------------------
