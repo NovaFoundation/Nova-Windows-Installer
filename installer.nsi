@@ -92,9 +92,13 @@
   Pop $0
   functionEnd
 !macroend
-  
+
 !insertmacro DualUseFunctions_ ""
 !insertmacro DualUseFunctions_ "un."
+
+; HKLM (all users) vs HKCU (current user) defines
+!define env_hklm 'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
+!define env_hkcu 'HKCU "Environment"'
 
 ;--------------------------------
 ;Languages
@@ -117,7 +121,10 @@ Section "Dummy Section" SecDummy
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   
-	Push 1 ; 1 = append.
+  ; set variable
+  WriteRegExpandStr ${env_hklm} "NOVA_HOME" "$INSTDIR"
+  
+  Push 1 ; 1 = append.
   Push "$INSTDIR\bin"
   Call SetPathVar
 
@@ -149,6 +156,9 @@ Section "Uninstall"
   Delete "$INSTDIR\Uninstall.exe"
 
   RMDir "$INSTDIR"
+  
+  ; delete variable
+  DeleteRegValue ${env_hklm} "NOVA_HOME"
   
   Push 0 ; 0 = remove
   Push "$INSTDIR\bin"
